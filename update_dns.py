@@ -12,22 +12,22 @@ API_TOKEN = os.environ.get("CF_API_TOKEN")
 ZONE_ID = os.environ.get("CF_ZONE_ID")
 
 
-# 你的优选域名
+# 修改成你的优选域名
 DOMAIN = "cf.789446.xyz"
 
 
 
 if not API_TOKEN:
-    raise Exception("没有设置 CF_API_TOKEN")
+    raise Exception("缺少 CF_API_TOKEN")
 
 
 if not ZONE_ID:
-    raise Exception("没有设置 CF_ZONE_ID")
+    raise Exception("缺少 CF_ZONE_ID")
 
 
 
 # =========================
-# 读取测速结果
+# 读取CFST结果
 # =========================
 
 RESULT_FILE = "result.csv"
@@ -36,7 +36,7 @@ RESULT_FILE = "result.csv"
 
 if not os.path.exists(RESULT_FILE):
 
-    raise Exception("没有找到 result.csv")
+    raise Exception("找不到 result.csv")
 
 
 
@@ -47,11 +47,12 @@ best_ip = None
 with open(
     RESULT_FILE,
     "r",
-    encoding="utf-8"
+    encoding="utf-8-sig"
 ) as f:
 
 
     reader = csv.DictReader(f)
+
 
 
     for row in reader:
@@ -60,21 +61,21 @@ with open(
         print(row)
 
 
-        # CFST新版字段
-        if "IP地址" in row:
+        # CloudflareSpeedTest v2.3.5
+        if "IP 地址" in row:
 
-            best_ip = row["IP地址"]
+            best_ip = row["IP 地址"]
 
             break
 
 
-        # 英文版本兼容
-        if "IP" in row:
+
+        # 兼容英文
+        elif "IP" in row:
 
             best_ip = row["IP"]
 
             break
-
 
 
 
@@ -86,15 +87,19 @@ if not best_ip:
 
 
 
+print("================")
+
 print(
     "最佳IP:",
     best_ip
 )
 
+print("================")
+
 
 
 # =========================
-# 查询DNS记录
+# 查询DNS
 # =========================
 
 
@@ -102,19 +107,19 @@ headers = {
 
 
     "Authorization":
-        f"Bearer {API_TOKEN}",
+    f"Bearer {API_TOKEN}",
 
 
     "Content-Type":
-        "application/json"
+    "application/json"
 
 }
 
 
 
-url = (
+dns_url = (
 
-    f"https://api.cloudflare.com/client/v4/zones/"
+    "https://api.cloudflare.com/client/v4/zones/"
     f"{ZONE_ID}/dns_records"
 
 )
@@ -124,18 +129,18 @@ url = (
 params = {
 
 
-    "name": DOMAIN,
+    "type":"A",
 
 
-    "type": "A"
+    "name":DOMAIN
 
 }
 
 
 
-r = requests.get(
+response = requests.get(
 
-    url,
+    dns_url,
 
     headers=headers,
 
@@ -145,7 +150,7 @@ r = requests.get(
 
 
 
-data = r.json()
+data=response.json()
 
 
 
@@ -155,38 +160,37 @@ if not data["success"]:
 
 
 
-records = data["result"]
+records=data["result"]
 
 
 
-if not records:
-
+if len(records)==0:
 
     raise Exception(
-        "找不到DNS记录"
+        "Cloudflare没有找到该DNS记录"
     )
 
 
 
-record_id = records[0]["id"]
+record_id=records[0]["id"]
+
 
 
 
 # =========================
-# 修改DNS
+# 更新DNS
 # =========================
 
 
-update_url = (
+update_url=(
 
-    f"https://api.cloudflare.com/client/v4/zones/"
-    f"{ZONE_ID}/dns_records/{record_id}"
+    f"{dns_url}/{record_id}"
 
 )
 
 
 
-payload = {
+payload={
 
 
     "type":"A",
@@ -207,7 +211,7 @@ payload = {
 
 
 
-r = requests.put(
+response=requests.put(
 
     update_url,
 
@@ -219,7 +223,7 @@ r = requests.put(
 
 
 
-result = r.json()
+result=response.json()
 
 
 
@@ -227,7 +231,13 @@ if result["success"]:
 
 
     print(
-        "DNS更新成功:",
+        "DNS更新成功"
+    )
+
+
+    print(
+        DOMAIN,
+        "=>",
         best_ip
     )
 
@@ -236,7 +246,6 @@ else:
 
 
     print(result)
-
 
     raise Exception(
         "DNS更新失败"
