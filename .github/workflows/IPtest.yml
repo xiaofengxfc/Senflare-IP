@@ -5,7 +5,7 @@ on:
 
   schedule:
 
-    # 每3小时执行一次
+    # 每3小时运行
 
     - cron: '0 */3 * * *'
 
@@ -33,7 +33,7 @@ jobs:
 
 
 
-    # 拉取代码
+    # 拉取仓库
 
     - name: Checkout code
 
@@ -59,7 +59,7 @@ jobs:
 
     # 安装依赖
 
-    - name: Install Python dependencies
+    - name: Install dependencies
 
       run: |
 
@@ -71,9 +71,9 @@ jobs:
 
 
 
-    # 运行 Senflare-IP
+    # 运行Senflare
 
-    - name: Run IP Test
+    - name: Run Senflare IP Test
 
       run: |
 
@@ -83,7 +83,7 @@ jobs:
 
 
 
-    # 下载 CloudflareSpeedTest
+    # 下载CloudflareSpeedTest
 
     - name: Install CloudflareSpeedTest
 
@@ -93,20 +93,11 @@ jobs:
         wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
 
 
-
         tar -zxf cfst_linux_amd64.tar.gz
 
 
 
-        echo "===== 查看解压结果 ====="
-
-
-
-        ls -al
-
-
-
-        echo "===== 查看程序 ====="
+        echo "查看CFST文件"
 
 
 
@@ -116,14 +107,14 @@ jobs:
 
 
 
-    # CloudflareSpeedTest测速
+    # Cloudflare测速
 
     - name: Run CloudflareSpeedTest
 
       run: |
 
 
-        echo "准备测速IP文件"
+        echo "准备IP列表"
 
 
 
@@ -131,15 +122,7 @@ jobs:
 
 
 
-        echo "当前测速IP列表："
-
-
-
-        cat ip.txt
-
-
-
-        echo "开始 CloudflareSpeedTest"
+        echo "开始测速"
 
 
 
@@ -156,7 +139,27 @@ jobs:
 
 
 
-    # 保存测速结果
+    # 自动更新Cloudflare DNS
+
+    - name: Update Cloudflare DNS
+
+      env:
+
+        CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+        CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
+
+
+      run: |
+
+
+        python update_dns.py
+
+
+
+
+
+    # 上传结果
 
     - name: Upload results
 
@@ -192,7 +195,7 @@ jobs:
 
 
 
-    # 提交更新
+    # 保存更新
 
     - name: Commit results
 
@@ -210,7 +213,7 @@ jobs:
 
 
 
-        git diff --staged --quiet || git commit -m "Update IP results $(date)"
+        git diff --staged --quiet || git commit -m "Auto update CF IP $(date)"
 
 
 
