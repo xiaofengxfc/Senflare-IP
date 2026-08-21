@@ -1,10 +1,8 @@
-# IP Test - Cloudflare优选IP采集器自动化工作流 v2.3.0 + Cloudflare DNS自动更新
-
 name: IP Test
 
 on:
   schedule:
-    # 每3小时执行一次
+    # 每3小时运行一次
     - cron: '0 */3 * * *'
 
   workflow_dispatch:
@@ -16,34 +14,38 @@ jobs:
 
     runs-on: ubuntu-latest
 
+
     permissions:
+
       contents: write
-      actions: read
 
 
     steps:
 
 
-    # 拉取仓库代码
+    # 拉取代码
+
     - name: Checkout code
+
       uses: actions/checkout@v4
 
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
 
 
+    # 安装Python
 
-    # 配置Python
-    - name: Set up Python
+    - name: Setup Python
+
       uses: actions/setup-python@v5
 
       with:
+
         python-version: '3.11'
 
 
 
     # 安装依赖
-    - name: Install Python dependencies
+
+    - name: Install dependencies
 
       run: |
 
@@ -53,13 +55,40 @@ jobs:
 
 
 
-    # 执行IP检测
-    - name: Run IP Test
+    # 运行Senflare-IP
+
+    - name: Run Senflare IP Test
 
       run: |
 
         python IPtest.py
 
+
+
+    # 下载CloudflareSpeedTest
+
+    - name: Install CloudflareSpeedTest
+
+      run: |
+
+        wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
+
+        tar -zxf cfst_linux_amd64.tar.gz
+
+        chmod +x cfst
+
+
+
+    # 使用CFST测速
+
+    - name: Run CloudflareSpeedTest
+
+      run: |
+
+        ./cfst \
+        -f IPlist-Pro.txt \
+        -o result.csv \
+        -t 20
 
 
 
@@ -89,11 +118,11 @@ jobs:
 
           Cache.json
 
+          result.csv
 
 
 
-
-    # 提交结果
+    # 保存结果到仓库
 
     - name: Commit results
 
@@ -104,33 +133,10 @@ jobs:
         git config --local user.name "GitHub Action"
 
 
-        git add IPlist.txt Senflare.txt IPlist-Pro.txt Senflare-Pro.txt Ranking.txt Cache.json
+        git add .
 
 
-        git diff --staged --quiet || git commit -m "Update IP results - $(date)"
+        git diff --staged --quiet || git commit -m "Update IP results $(date)"
 
 
         git push
-
-
-
-
-
-    # 自动更新Cloudflare优选域名
-
-    - name: Update Cloudflare DNS
-
-      env:
-
-        CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-
-        CF_ZONE_ID: ${{ secrets.CF_ZONE_ID }}
-
-
-      run: |
-
-
-        pip install requests
-
-
-        python update_dns.py
