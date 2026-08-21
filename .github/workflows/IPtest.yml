@@ -5,7 +5,7 @@ on:
 
   schedule:
 
-    # 每3小时运行一次
+    # 每3小时执行一次
 
     - cron: '0 */3 * * *'
 
@@ -41,7 +41,8 @@ jobs:
 
 
 
-    # 设置Python环境
+
+    # 安装Python
 
     - name: Set up Python
 
@@ -50,6 +51,7 @@ jobs:
       with:
 
         python-version: '3.11'
+
 
 
 
@@ -65,7 +67,8 @@ jobs:
 
 
 
-    # 运行Senflare-IP
+
+    # 运行 Senflare-IP
 
     - name: Run IP Test
 
@@ -75,11 +78,14 @@ jobs:
 
 
 
-    # 下载CloudflareSpeedTest
+
+
+    # 安装 CloudflareSpeedTest
 
     - name: Install CloudflareSpeedTest
 
       run: |
+
 
         wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
 
@@ -87,75 +93,61 @@ jobs:
         tar -zxf cfst_linux_amd64.tar.gz
 
 
-        echo "===== 解压文件列表 ====="
+
+        echo "===== 查看解压内容 ====="
 
 
         ls -al
 
 
 
-    # 运行CloudflareSpeedTest
+        echo "===== 查看程序目录 ====="
+
+
+        ls -al cfst_linux_amd64
+
+
+
+
+
+    # 开始测速
 
     - name: Run CloudflareSpeedTest
 
       run: |
 
 
-        chmod +x cfst || true
-
-        chmod +x CloudflareST || true
+        echo "开始 CloudflareSpeedTest"
 
 
 
-        if [ -f "./cfst" ]; then
-
-
-          echo "使用 cfst"
-
-
-          ./cfst \
-          -f IPlist-Pro.txt \
-          -o result.csv \
-          -t 20
+        chmod +x cfst_linux_amd64/cfst
 
 
 
-        elif [ -f "./CloudflareST" ]; then
+        ./cfst_linux_amd64/cfst \
 
+        -f IPlist-Pro.txt \
 
-          echo "使用 CloudflareST"
+        -o result.csv \
 
-
-
-          ./CloudflareST \
-          -f IPlist-Pro.txt \
-          -o result.csv \
-          -t 20
-
-
-
-        else
-
-
-          echo "错误：没有找到测速程序"
-
-
-          exit 1
-
-
-        fi
+        -t 20
 
 
 
 
-    # 上传测试结果
+
+
+    # 保存结果
 
     - name: Upload results
+
 
       uses: actions/upload-artifact@v4
 
 
       with:
+
 
         name: ip-results
 
@@ -182,9 +174,11 @@ jobs:
 
 
 
-    # 提交结果
+
+    # 自动提交结果
 
     - name: Commit results
+
 
       run: |
 
