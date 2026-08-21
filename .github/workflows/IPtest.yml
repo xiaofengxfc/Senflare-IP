@@ -33,7 +33,7 @@ jobs:
 
 
 
-    # 拉取仓库代码
+    # 拉取代码
 
     - name: Checkout code
 
@@ -42,7 +42,8 @@ jobs:
 
 
 
-    # 安装Python
+
+    # Python环境
 
     - name: Set up Python
 
@@ -51,6 +52,7 @@ jobs:
       with:
 
         python-version: '3.11'
+
 
 
 
@@ -68,6 +70,7 @@ jobs:
 
 
 
+
     # 运行 Senflare-IP
 
     - name: Run IP Test
@@ -80,7 +83,7 @@ jobs:
 
 
 
-    # 安装 CloudflareSpeedTest
+    # 下载 CloudflareSpeedTest
 
     - name: Install CloudflareSpeedTest
 
@@ -90,18 +93,21 @@ jobs:
         wget -N https://github.com/XIU2/CloudflareSpeedTest/releases/latest/download/cfst_linux_amd64.tar.gz
 
 
+
         tar -zxf cfst_linux_amd64.tar.gz
 
 
 
-        echo "===== 查看解压内容 ====="
+        echo "===== 查看解压结果 ====="
+
 
 
         ls -al
 
 
 
-        echo "===== 查看程序目录 ====="
+        echo "===== 查看程序 ====="
+
 
 
         ls -al cfst_linux_amd64
@@ -110,11 +116,27 @@ jobs:
 
 
 
-    # 开始测速
+    # CloudflareSpeedTest测速
 
     - name: Run CloudflareSpeedTest
 
       run: |
+
+
+        echo "准备测速IP文件"
+
+
+
+        cp IPlist-Pro.txt ip.txt
+
+
+
+        echo "当前测速IP列表："
+
+
+
+        cat ip.txt
+
 
 
         echo "开始 CloudflareSpeedTest"
@@ -126,22 +148,17 @@ jobs:
 
 
         ./cfst_linux_amd64/cfst \
-
-        -f IPlist-Pro.txt \
-
+        -f ip.txt \
         -o result.csv \
-
         -t 20
 
 
 
 
 
-
-    # 保存结果
+    # 保存测速结果
 
     - name: Upload results
-
 
       uses: actions/upload-artifact@v4
 
@@ -175,10 +192,9 @@ jobs:
 
 
 
-    # 自动提交结果
+    # 提交更新
 
     - name: Commit results
-
 
       run: |
 
